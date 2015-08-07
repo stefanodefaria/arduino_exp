@@ -5,10 +5,10 @@ boolean ledArduinoAceso = false;
 boolean ledVermelhoAceso = false;
 
 boolean start = false;
-boolean finished = false;
+boolean finished = true;
 
-int countArduino = 8;   //repeticoes, deve ser par
-int countVermelho = 8;  //repeticoes, deve ser par
+int countArduino = 0;   //repeticoes, deve ser par
+int countVermelho = 0;  //repeticoes, deve ser par
 int delayTime = 500;     //ms
 
 
@@ -18,31 +18,33 @@ void setup() {
   pinMode(ledVermelho, OUTPUT);      // sets the digital pin as output
 }
 
+void initialize(){
+  countArduino = 8;   //repeticoes, deve ser par
+  countVermelho = 8;
+  start = true;
+  finished = false;
+}
+
 void serialEvent(){
   char comando = Serial.read();
   
-  Serial.write("Comando: ");
-  Serial.write(comando);
-  Serial.write("\n");
-  
   switch (comando){
     case '1':
-      start = true;
-      Serial.write("Operacao iniciada");
+      initialize();
+      Serial.write("0");
       break;
     case '2':
       if(finished){
-        Serial.write("Terminado");
+        Serial.write("3");
       }
       else if (start){
-        Serial.write("Em andamento");
+        Serial.write("1");
       }
       else{
-        Serial.write("Nao iniciado");
+        Serial.write("4");
       }
       break;
   }
-  Serial.write("\n");
 }
 
 void loop()
@@ -57,7 +59,8 @@ void loop()
   }
   else if(start && !finished){
     finished = true;
-    Serial.write("Terminou agora\n");
+    start = false;
+    Serial.write("2");
   }
   
 }
