@@ -1,7 +1,8 @@
 const char ledArduino = 13;
 const char ledVermelho = 9;
 
-const unsigned int ledInitialCount = 400;
+const unsigned int ledTime = 4000; //milliseconds
+const unsigned int taskInterval = 10; //milliseconds
 
 const char AVAILABLE = '0';
 const char BUSY = '1';
@@ -14,12 +15,13 @@ const char UNKNOWN_COMMAND = '7';
 
 boolean ledArduinoAceso = false;
 boolean ledVermelhoAceso = false;
+const int totalBlinkChange = 8;
+const int totalBlinkTime = (int) ledTime/totalBlinkChange;
 
 boolean busy = false;
 
 int countArduino = 0;   //repeticoes, deve ser par
 int countVermelho = 0;  //repeticoes, deve ser par
-int delayTime = 10;     //ms
 
 
 void setup() {
@@ -28,14 +30,18 @@ void setup() {
   pinMode(ledVermelho, OUTPUT);      // sets the digital pin as output
 }
 
-void initialize(){
-  countArduino = ledInitialCount;   //repeticoes, deve ser par
-  countVermelho = ledInitialCount;  //repeticoes, deve ser par
+void reset(){
   digitalWrite(ledArduino, LOW);
   digitalWrite(ledVermelho, LOW);
   ledVermelhoAceso = false;
   ledArduinoAceso = false;
   busy = false;
+}
+
+void initialize(){
+  countArduino = (int) ledTime / taskInterval;   //repeticoes, deve ser par
+  countVermelho = (int) ledTime / taskInterval;  //repeticoes, deve ser par
+  busy = true;
 }
 
 void serialEvent(){
@@ -48,7 +54,6 @@ void serialEvent(){
       }
       else{
         initialize();
-        busy = true;
         Serial.write(SUCCESS);
       }
       break;
@@ -63,7 +68,7 @@ void serialEvent(){
       break;
     
     case RESET:      
-      initialize();
+      reset();
       Serial.write(SUCCESS);
       break;
     
@@ -77,21 +82,22 @@ void loop()
 {    
   if(busy){
     if(countArduino){
-      if(!(countArduino % 50))
+      if(!(countArduino % (int)(totalBlinkTime / taskInterval)))
         ledArduinoAceso = toggleLed(ledArduino, ledArduinoAceso);
       countArduino--;
     }
     if(!countArduino && countVermelho){
-      if(!(countVermelho % 50))
+      if(!(countVermelho % (int)(totalBlinkTime / taskInterval)))
         ledVermelhoAceso = toggleLed(ledVermelho, ledVermelhoAceso);
       countVermelho--;
     }
-    if(!countArduino && !countVermelho){      
-      Serial.write(END);
+    if(!countArduino && !countVermelho){
       busy = false;
+      Serial.write(END);
     }
-  }  
-  delay(delayTime);  
+
+    delay(taskInterval);
+  }
 }
 
 boolean toggleLed(int led, boolean aceso){
